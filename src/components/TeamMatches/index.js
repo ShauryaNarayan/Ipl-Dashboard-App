@@ -76,6 +76,7 @@ class TeamMatches extends Component {
       </div>
     )
   }
+
   render() {
     const {isLoading} = this.state
 
