@@ -1,19 +1,12 @@
-// Write your code here
 import {Component} from 'react'
-
 import Loader from 'react-loader-spinner'
-
 import LatestMatch from '../LatestMatch'
-
 import MatchCard from '../MatchCard'
+import MatchStats from '../MatchStats'
+import './index.css'
 
 class TeamMatches extends Component {
-  state = {
-    teamBannerUrl: '',
-    latestMatch: {},
-    recentMatches: [],
-    isLoading: true,
-  }
+  state = {teamMatchesData: {}, isLoading: true}
 
   componentDidMount() {
     this.getTeamMatches()
@@ -21,52 +14,80 @@ class TeamMatches extends Component {
 
   getTeamMatches = async () => {
     const {match} = this.props
-    const {params} = match
-    const {id} = params
+    const {id} = match.params
     const response = await fetch(`https://apis.ccbp.in/ipl/${id}`)
     const data = await response.json()
-    const latestMatch = this.camelCaseMatch(data.latest_match_details)
-    const recentMatches = data.recent_matches.map(this.camelCaseMatch)
 
-    this.setState({
+    const updatedData = {
       teamBannerUrl: data.team_banner_url,
-      latestMatch,
-      recentMatches,
-      isLoading: false,
-    })
+      latestMatch: {
+        umpires: data.latest_match_details.umpires,
+        result: data.latest_match_details.result,
+        manOfTheMatch: data.latest_match_details.man_of_the_match,
+        id: data.latest_match_details.id,
+        date: data.latest_match_details.date,
+        venue: data.latest_match_details.venue,
+        competingTeam: data.latest_match_details.competing_team,
+        competingTeamLogo: data.latest_match_details.competing_team_logo,
+        firstInnings: data.latest_match_details.first_innings,
+        secondInnings: data.latest_match_details.second_innings,
+        matchStatus: data.latest_match_details.match_status,
+      },
+      recentMatches: data.recent_matches.map(each => ({
+        umpires: each.umpires,
+        result: each.result,
+        manOfTheMatch: each.man_of_the_match,
+        id: each.id,
+        date: each.date,
+        venue: each.venue,
+        competingTeam: each.competing_team,
+        competingTeamLogo: each.competing_team_logo,
+        firstInnings: each.first_innings,
+        secondInnings: each.second_innings,
+        matchStatus: each.match_status,
+      })),
+    }
+
+    this.setState({teamMatchesData: updatedData, isLoading: false})
   }
 
-  camelCaseMatch = match => ({
-    id: match.id,
-    date: match.date,
-    venue: match.venue,
-    result: match.result,
-    umpires: match.umpires,
-    manOfTheMatch: match.man_of_the_match,
-    competingTeam: match.competing_team,
-    competingTeamLogo: match.competing_team_logo,
-    firstInnings: match.first_innings,
-    secondInnings: match.second_innings,
-    matchStatus: match.match_status,
-  })
+  onClickBack = () => {
+    const {history} = this.props
+    history.push('/')
+  }
 
-  render() {
-    const {teamBannerUrl, latestMatch, recentMatches, isLoading} = this.state
+  renderTeamMatches = () => {
+    const {teamMatchesData} = this.state
+    const {teamBannerUrl, latestMatch, recentMatches} = teamMatchesData
 
-    return isLoading ? (
-      <div testid="loader" className="loader-container">
-        <Loader type="Oval" color="#ffffff" height={50} width={50} />
-      </div>
-    ) : (
+    return (
       <div className="team-matches-container">
         <img src={teamBannerUrl} alt="team banner" className="team-banner" />
-        <h1 className="section-title">Latest Matches</h1>
         <LatestMatch match={latestMatch} />
-        <ul className="recent-matches">
-          {recentMatches.map(match => (
-            <MatchCard key={match.id} match={match} />
+        <ul className="recent-matches-list">
+          {recentMatches.map(each => (
+            <MatchCard key={each.id} match={each} />
           ))}
         </ul>
+        <MatchStats recentMatches={recentMatches} />
+        <button type="button" onClick={this.onClickBack}>
+          Back
+        </button>
+      </div>
+    )
+  }
+  render() {
+    const {isLoading} = this.state
+
+    return (
+      <div className="team-matches-route-container">
+        {isLoading ? (
+          <div testid="loader">
+            <Loader type="Oval" color="#ffffff" height={50} width={50} />
+          </div>
+        ) : (
+          this.renderTeamMatches()
+        )}
       </div>
     )
   }
